@@ -6,7 +6,8 @@ MAX_HEIGHT = 500
 CELL_SIZE = 25
 BUTTON_SIZE = 100
 CELL_STATUS = [0,1] # 0 -> dead 1 -> live
-
+CELLS_FOR_ROW = (MAX_HEIGHT - 100) // CELL_SIZE
+CELLS_FOR_COL = MAX_WIDTH // CELL_SIZE
 # Set up window and canvas
 window = GraphicsWindow(MAX_WIDTH, MAX_HEIGHT)
 window.setTitle("The game of Life")
@@ -14,30 +15,26 @@ canvas = window.canvas()
 
 # Button events
 def step():
-    update_grid(cells)
+    update_grid(cells,True)
     return
 
 def clear(cells):
-    cells_for_row = (MAX_HEIGHT-100) // CELL_SIZE
-    cells_for_col = MAX_WIDTH // CELL_SIZE
-
-    for row in range(cells_for_row):
-        for col in range(cells_for_col):
+    for row in range(CELLS_FOR_ROW):
+        for col in range(CELLS_FOR_COL):
             cells[row][col] = CELL_STATUS[0]
-    update_grid(cells)
+    update_grid(cells,True)
 
 def glider(cells):
-    glider = [[0,0,1],[1,0,1],[0,1,1]]
+    glider = [[0,0,1],
+              [1,0,1],
+              [0,1,1]]
 
-    rows = (MAX_HEIGHT - 100) // CELL_SIZE
-    cols = MAX_WIDTH  // CELL_SIZE
-
-    center_row = (rows // 2) - 1
-    center_col = (cols // 2) - 1
+    center_row = (CELLS_FOR_ROW // 2) - 1 #  - 1 = first square on the row based on glider's pattern
+    center_col = (CELLS_FOR_COL // 2) - 2 #  - 2 = first square on the col based on glider's pattern
     for row in range(3):
         for col in range(3):
             cells[center_row + row][center_col + col] = glider[row][col]
-    draw_grid(cells)
+    draw_cells(cells,False)
     
 
 def quit():
@@ -59,113 +56,112 @@ def init_buttons():
 
 
 def init_cells(cells_list):
-    cells_for_row = (MAX_HEIGHT-100) // CELL_SIZE
-    cells_for_col = MAX_WIDTH // CELL_SIZE
-
-    # table
-    for i in range(cells_for_row):
-        row = [0] * cells_for_col
+    for i in range(CELLS_FOR_ROW):
+        row = [0] * CELLS_FOR_COL
         cells_list.append(row)
 
-def cell_neighbours(cells,row,col):
-    neighbours = 0
-    neighbour_offsets = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
 
-    rows = (MAX_HEIGHT - 100) // CELL_SIZE
-    cols = MAX_WIDTH // CELL_SIZE
+def check_neighbours(cells,row,col):
+    neighbours = 0
+    neighbour_offsets = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)] # neighbours' pattern
 
     for offset in neighbour_offsets:
-        # taking cells next to the current cell
+        # taking cells around the current cell
         new_row = row + offset[0]  
-        new_col = col + offset[1] 
+        new_col = col + offset[1]
         # if the near cell is alive, it's a neighbour
-        if 0 <= new_row < rows and 0 <= new_col < cols:
+        if new_row < CELLS_FOR_ROW and new_col < CELLS_FOR_COL:
             if cells[new_row][new_col] == CELL_STATUS[1]:
                 neighbours += 1
     return neighbours
 
 def toggle_cell(cells,row,col):
-    cells[row][col] = not cells[row][col]
+    if cells[row][col] == CELL_STATUS[0]:
+        cells[row][col] = CELL_STATUS[1]
+    else:
+        cells[row][col] = CELL_STATUS[0]
 
-def draw_grid(cells):
-    cells_for_row = (MAX_HEIGHT - 100) // CELL_SIZE
-    cells_for_col = MAX_WIDTH // CELL_SIZE
-
-    canvas.setOutline(255,0,0) # red
-    for x in range(cells_for_row):
-        for y in range(cells_for_col):
-            if cells[x][y] == 0:
+squares = []
+def draw_cells(cells,must_clean):
+    # If I have ids, it means I have elements inside the canvas that need to be eliminated before creating them again
+    if(len(squares) > 0 and must_clean is True):
+        for id in squares:
+            canvas.removeItem(id) # Cleaning canvas to prevent performance issues by removing the 
+        squares.clear()
+    # Population of the canvas with cells: white if dead(0) or black if alive(1)
+    for x in range(CELLS_FOR_ROW):
+        for y in range(CELLS_FOR_COL):
+            if cells[x][y] == CELL_STATUS[0]:
                 canvas.setFill(255,255,255)
             else:
-                canvas.setFill(0,0,0)
-            canvas.drawRect(y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                canvas.setFill(0,0,0)  
+            id = canvas.drawRect(y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE) # Used to clean the canvas during recalculations
+            squares.append(id) # List that contains the id for each element of the canvas that we have drawn
 
-def update_grid(cells):
+def draw_grid():
+    canvas.setOutline(255,0,0) # red
+    for i in range(CELLS_FOR_ROW):
+        canvas.drawLine(0,i * CELL_SIZE,MAX_WIDTH,i * CELL_SIZE)
+    for j in range(CELLS_FOR_COL):
+        canvas.drawLine(j * CELL_SIZE,0,j * CELL_SIZE,MAX_HEIGHT-100)   
+
+def update_grid(cells, must_clean):
     temp_cells = [] 
     init_cells(temp_cells)
-    
-    cells_for_row = (MAX_HEIGHT - 100) // CELL_SIZE
-    cells_for_col = MAX_WIDTH // CELL_SIZE
-
-    for row in range(cells_for_row):
-        for col in range(cells_for_col):
-            neighbours = cell_neighbours(cells, row, col)
+    # Update cells status
+    for row in range(CELLS_FOR_ROW):
+        for col in range(CELLS_FOR_COL):
+            neighbours = check_neighbours(cells, row, col)
             cell_value = cells[row][col]
-
-            if cell_value == 1:
-                if neighbours > 3 or neighbours < 2:
-                    temp_cells[row][col] = 0
+            if cell_value == CELL_STATUS[1]: # live
+                if neighbours > 3 or neighbours < 2:  # Overpopulation/Underpopulation -> 0 -> dead cell
+                    temp_cells[row][col] = CELL_STATUS[0]
                 else :
-                    temp_cells[row][col] = 1
-            elif cell_value == 0:
-                if neighbours == 3:
-                    temp_cells[row][col] = 1
+                    temp_cells[row][col] = CELL_STATUS[1]
+            elif cell_value == CELL_STATUS[0]: # dead
+                if neighbours == 3: # Reproduction -> 1 -> live cell
+                    temp_cells[row][col] = CELL_STATUS[1]
                 else:
-                    temp_cells[row][col] = 0
-
-    for row in range(cells_for_row):
-        for col in range(cells_for_col):
+                    temp_cells[row][col] = CELL_STATUS[0]
+    # Update cells value before redrawing them
+    for row in range(CELLS_FOR_ROW):
+        for col in range(CELLS_FOR_COL):
             cells[row][col] = temp_cells[row][col]
-    draw_grid(cells)
+    draw_cells(cells,must_clean)
 
 cells = []
 def start():
-    
     # Buttons
     init_buttons()
-    
-    # List of cells
+    # List of dead cells
     init_cells(cells)
-    
-    # 2d grid
-    draw_grid(cells)
+    # 2d grid with dead cells
+    draw_grid()
 
 def update():
     done = False
     while not done:
         if(window.onMouseDown):
-
-            mouse_xy = window.getMouse() # mouse coordinates for x and y when left mouse button is pressed
-
-            # Change cell status
+            mouse_xy = window.getMouse() # mouse coordinates for x and y when mouse button is pressed
+            # Change cell status if we pressed inside the 2d grid
             if(mouse_xy[1] < MAX_HEIGHT-100):
                 row = mouse_xy[1] // CELL_SIZE
                 col = mouse_xy[0] // CELL_SIZE
                 toggle_cell(cells,row,col)
-                draw_grid(cells)
-
-            # Button events
+                draw_cells(cells,False)
+            # Raise the button event equal to mouse pos
             if mouse_xy[0] > MAX_WIDTH-100 and mouse_xy[1] > MAX_HEIGHT-100: # Quit event
                 done = quit()
             elif mouse_xy[0] > MAX_WIDTH-200 and mouse_xy[1] > MAX_HEIGHT-100: # Glider event
                 glider(cells)
-                print("Glider event!")
+                #print("Glider event!")
             elif mouse_xy[0] > MAX_WIDTH-300 and mouse_xy[1] > MAX_HEIGHT-100: # Clear event
                 clear(cells)
-                print("Clear event!")
+                #print("Clear event!")
             elif mouse_xy[0] > 0 and mouse_xy[1] > MAX_HEIGHT-100: # Step event
                 step()
-                print("Step event!")
+                #print("Step event!")
+
 
 start()
 update()
