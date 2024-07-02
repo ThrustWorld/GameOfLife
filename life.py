@@ -15,14 +15,14 @@ canvas = window.canvas()
 
 # Button events
 def step():
-    update_grid(cells,True)
+    update_cells(cells,True)
     return
 
 def clear(cells):
     for row in range(CELLS_FOR_ROW):
         for col in range(CELLS_FOR_COL):
             cells[row][col] = CELL_STATUS[0]
-    update_grid(cells,True)
+    update_cells(cells,True)
 
 def glider(cells):
     glider = [[0,0,1],
@@ -34,7 +34,7 @@ def glider(cells):
     for row in range(3):
         for col in range(3):
             cells[center_row + row][center_col + col] = glider[row][col]
-    draw_cells(cells,False)
+    update_cells(cells,True)
     
 
 def quit():
@@ -82,7 +82,7 @@ def toggle_cell(cells,row,col):
         cells[row][col] = CELL_STATUS[0]
 
 squares = []
-def draw_cells(cells,must_clean):
+def update_grid(cells,must_clean):
     # If I have ids, it means I have elements inside the canvas that need to be eliminated before creating them again
     if(len(squares) > 0 and must_clean is True):
         for id in squares:
@@ -96,7 +96,23 @@ def draw_cells(cells,must_clean):
             else:
                 canvas.setFill(0,0,0) 
             id = canvas.drawRect(y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE) # Used to clean the canvas during recalculations
-            squares.append(id) # List that contains the id for each element of the canvas that we have drawn    
+            squares.append(id) # List that contains the id for each element of the canvas that we have drawn
+
+    print(len(squares))    
+
+old_cells = []
+def draw_cell(cells):
+    for x in range(CELLS_FOR_ROW):
+        for y in range(CELLS_FOR_COL):
+            if cells[x][y] != old_cells[x][y]:
+                if cells[x][y] == CELL_STATUS[0]:
+                    canvas.setFill(255,255,255)
+                else:
+                    canvas.setFill(0,0,0) 
+                id = canvas.drawRect(y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE) # Used to clean the canvas during recalculations
+                squares.append(id) # List that contains the id for each element of the canvas that we have drawn
+            old_cells[x][y] = cells[x][y]
+    print(len(squares)) 
 
 def draw_grid():
     canvas.setOutline(255,0,0) # red
@@ -105,7 +121,7 @@ def draw_grid():
     for j in range(CELLS_FOR_COL):
         canvas.drawLine(j * CELL_SIZE,0,j * CELL_SIZE,MAX_HEIGHT-100)   
 
-def update_grid(cells, must_clean):
+def update_cells(cells, must_clean):
     temp_cells = [] 
     init_cells(temp_cells)
     # Update cells status
@@ -127,7 +143,7 @@ def update_grid(cells, must_clean):
     for row in range(CELLS_FOR_ROW):
         for col in range(CELLS_FOR_COL):
             cells[row][col] = temp_cells[row][col]
-    draw_cells(cells,must_clean)
+    update_grid(cells,must_clean)
 
 cells = []
 def start():
@@ -135,6 +151,7 @@ def start():
     init_buttons()
     # List of dead cells
     init_cells(cells)
+    init_cells(old_cells)
     # 2d grid with dead cells
     draw_grid()
 
@@ -148,7 +165,7 @@ def update():
                 row = mouse_xy[1] // CELL_SIZE
                 col = mouse_xy[0] // CELL_SIZE
                 toggle_cell(cells,row,col)
-                draw_cells(cells,True)
+                draw_cell(cells)
             # Raise the button event equal to mouse pos
             if mouse_xy[0] > MAX_WIDTH-100 and mouse_xy[1] > MAX_HEIGHT-100: # Quit event
                 done = quit()
