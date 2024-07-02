@@ -94,9 +94,9 @@ def draw_cells(cells,must_clean):
             if cells[x][y] == CELL_STATUS[0]:
                 canvas.setFill(255,255,255)
             else:
-                canvas.setFill(0,0,0)  
+                canvas.setFill(0,0,0) 
             id = canvas.drawRect(y * CELL_SIZE, x * CELL_SIZE, CELL_SIZE, CELL_SIZE) # Used to clean the canvas during recalculations
-            squares.append(id) # List that contains the id for each element of the canvas that we have drawn
+            squares.append(id) # List that contains the id for each element of the canvas that we have drawn    
 
 def draw_grid():
     canvas.setOutline(255,0,0) # red
@@ -148,7 +148,7 @@ def update():
                 row = mouse_xy[1] // CELL_SIZE
                 col = mouse_xy[0] // CELL_SIZE
                 toggle_cell(cells,row,col)
-                draw_cells(cells,False)
+                draw_cells(cells,True)
             # Raise the button event equal to mouse pos
             if mouse_xy[0] > MAX_WIDTH-100 and mouse_xy[1] > MAX_HEIGHT-100: # Quit event
                 done = quit()
