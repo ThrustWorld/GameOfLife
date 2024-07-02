@@ -30,11 +30,11 @@ def glider(cells):
               [0,1,1]]
 
     center_row = (CELLS_FOR_ROW // 2) - 1 #  - 1 = first square on the row based on glider's pattern
-    center_col = (CELLS_FOR_COL // 2) - 2 #  - 2 = first square on the col based on glider's pattern
+    center_col = (CELLS_FOR_COL // 2) - 2#  - 2 = first square on the col based on glider's pattern
     for row in range(3):
         for col in range(3):
             cells[center_row + row][center_col + col] = glider[row][col]
-    update_cells(cells,True)
+    update_grid(cells,True)
     
 
 def quit():
