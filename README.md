@@ -12,4 +12,7 @@ Academic project based on [Conway's Game of Life](https://en.wikipedia.org/wiki/
 - STEP = button that simulates the evolution of the cells based on rules. <br>
 - CLEAR = button that refreshes the grid. <br>
 - GLIDER = button that creates an existing pattern. <br>
-- QUIT = button that closes the program.
+- QUIT = button that closes the program. <br>
+<br>
+<br>
+<img src="life.gif" width="600" height="390"/>
